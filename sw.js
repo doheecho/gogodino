@@ -1,16 +1,16 @@
 var CACHE_PREFIX = 'gogodino-quiz-';
-var CACHE_NAME = CACHE_PREFIX + 'v1';
+var CACHE_NAME = CACHE_PREFIX + 'v2';
 var PRECACHE_URLS = [
-    './',
-    './index.html',
-    './manifest.json',
-    './css/style.css',
-    './js/main.js',
-    './js/games/gogodino.js',
-    './favicon.svg',
-    './icon-192x192.png',
-    './icon-512x512.png',
-    './icon-maskable-512.png'
+    '/gogodino/',
+    '/gogodino/index.html',
+    '/gogodino/manifest.json',
+    '/gogodino/css/style.css',
+    '/gogodino/js/main.js',
+    '/gogodino/js/games/gogodino.js',
+    '/gogodino/favicon.svg',
+    '/gogodino/icon-192x192.png',
+    '/gogodino/icon-512x512.png',
+    '/gogodino/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', function (e) {
@@ -53,7 +53,7 @@ self.addEventListener('fetch', function (e) {
                 }
                 return response;
             }).catch(function () {
-                if (e.request.mode === 'navigate') return caches.match('./index.html');
+                if (e.request.mode === 'navigate') return caches.match('/gogodino/index.html');
             });
         })
     );

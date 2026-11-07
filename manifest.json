@@ -1,18 +1,18 @@
 {
-  "id": "./",
+  "id": "/gogodino/",
   "name": "고고다이노 맞히기!",
   "short_name": "고고다이노맞히기",
   "description": "고고다이노 캐릭터 사진을 보고 이름을 맞히는 음성인식 퀴즈 게임",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/gogodino/index.html",
+  "scope": "/gogodino/",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "ko",
   "background_color": "#eaf6ff",
   "theme_color": "#152a4e",
   "icons": [
-    { "src": "icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/gogodino/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/gogodino/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/gogodino/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
