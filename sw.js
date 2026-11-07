@@ -1,5 +1,5 @@
 var CACHE_PREFIX = 'gogodino-quiz-';
-var CACHE_NAME = CACHE_PREFIX + 'v2';
+var CACHE_NAME = CACHE_PREFIX + 'v3';
 var PRECACHE_URLS = [
     '/gogodino/',
     '/gogodino/index.html',

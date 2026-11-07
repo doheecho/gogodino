@@ -60,9 +60,15 @@ var gogodinoState = {};
 var GD_SPEECH_SUPPORTED = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 var gdVoiceRecognition = null;
 
-// ===== 정답을 음성으로 읽어주기 (TTS, 설정에서 목소리 선택 가능) =====
+// ===== 정답을 음성으로 읽어주기 (TTS, 팝업 설정에서 목소리/방식 선택 가능) =====
+// 기본값은 기기의 시스템 설정을 그대로 따른다 (voice/lang을 아예 지정하지 않음).
+// PC는 한국어 음성이 깔려있어 잘 되지만, 안드로이드 기기는 한국어 음성이 따로 설치되어
+// 있지 않은 경우가 많아서 'ko-KR'을 강제로 지정하면 아예 소리가 안 나는 경우가 있다.
+// 그래서 사용자가 직접 고르지 않으면 언어/목소리를 강제하지 않고, 설정 팝업에서는
+// 기기에 설치된 모든 목소리 중에서 원하는 것을 선택할 수 있게 한다.
 var GD_SPEECH_SYNTH_SUPPORTED = !!window.speechSynthesis;
 var GD_VOICE_STORAGE_KEY = 'gogodinoVoiceURI';
+var GD_ANSWER_STYLE_KEY = 'gogodinoAnswerStyle';
 var gdVoicesList = [];
 function gdLoadVoices() {
     if (!GD_SPEECH_SYNTH_SUPPORTED) return;
@@ -71,25 +77,35 @@ function gdLoadVoices() {
 if (GD_SPEECH_SYNTH_SUPPORTED) {
     gdLoadVoices();
     // 목소리 목록은 비동기로 늦게 채워지는 브라우저가 많아서, 준비되면 다시 읽어오고
-    // 설정 화면이 열려있으면 새로 그려서 목록에 반영한다.
+    // 설정 팝업이 열려있으면 새로 그려서 목록에 반영한다.
     window.speechSynthesis.onvoiceschanged = function () {
         gdLoadVoices();
-        if (document.getElementById('gogodinoVoiceSection')) { renderGogodinoSetup(); }
+        if (document.getElementById('gdSettingsOverlay')) { renderGogodinoSettingsModal(); }
     };
+}
+function getGogodinoKoreanVoices() {
+    // 'ko'로 "시작하기만" 하면 통과시키면 'kok'(인도 콘칸어) 같은 언어 코드까지 한국어로
+    // 잘못 걸러져서 인도어 목소리가 섞여 들어온다. 'ko' 단독이거나 'ko-KR'처럼 'ko-'로
+    // 시작하는 경우만 한국어로 인정한다.
+    return gdVoicesList.filter(function (v) {
+        var lang = (v.lang || '').toLowerCase();
+        return lang === 'ko' || lang.indexOf('ko-') === 0;
+    });
 }
 function gdGetSavedVoiceURI() {
     try { return localStorage.getItem(GD_VOICE_STORAGE_KEY) || ''; } catch (e) { return ''; }
 }
+// null을 반환하면 "기본값" 상태를 뜻하며, 이때는 utter.voice/utter.lang을 아예 지정하지 않고
+// 기기의 시스템 설정(기본 언어·기본 목소리)을 그대로 따르게 둔다.
 function getGogodinoSelectedVoice() {
     if (!GD_SPEECH_SYNTH_SUPPORTED) return null;
     var uri = gdGetSavedVoiceURI();
-    if (!uri) return null;
-    var found = gdVoicesList.filter(function (v) { return v.voiceURI === uri; });
-    return found[0] || null;
+    if (!uri) return null; // 직접 고른 적 없음 → 기본값(시스템 설정)
+    return gdVoicesList.filter(function (v) { return v.voiceURI === uri; })[0] || null;
 }
 function setGogodinoVoice(uri) {
     try { localStorage.setItem(GD_VOICE_STORAGE_KEY, uri || ''); } catch (e) { }
-    renderGogodinoSetup();
+    renderGogodinoSettingsModal();
 }
 // 설치된 TTS 목소리 이름에서 남/여를 대략적으로 추정한다 (완벽하지 않은 보조 정보용).
 function gdGuessVoiceGender(name) {
@@ -100,16 +116,114 @@ function gdGuessVoiceGender(name) {
     for (var i = 0; i < maleHints.length; i++) { if (n.indexOf(maleHints[i]) > -1) return '남자'; }
     return '';
 }
-function speakGogodinoAnswer(text) {
-    if (!GD_SPEECH_SYNTH_SUPPORTED) return;
+// 한국어 음성들을 여자/남자/기타(구분 불가)로 묶는다. 같은 성별이 여러 개면 첫 번째만 대표로 쓴다.
+function gdBuildVoiceGenderGroups(koreanVoices) {
+    var groups = { female: null, male: null, other: [] };
+    koreanVoices.forEach(function (v) {
+        var g = gdGuessVoiceGender(v.name);
+        if (g === '여자' && !groups.female) { groups.female = v; }
+        else if (g === '남자' && !groups.male) { groups.male = v; }
+        else if (!g) { groups.other.push(v); }
+    });
+    return groups;
+}
+function gdGetAnswerStyle() {
+    try { return localStorage.getItem(GD_ANSWER_STYLE_KEY) || 'nameOnly'; } catch (e) { return 'nameOnly'; }
+}
+function setGogodinoAnswerStyle(style) {
+    try { localStorage.setItem(GD_ANSWER_STYLE_KEY, style); } catch (e) { }
+    renderGogodinoSettingsModal();
+}
+function speakGogodinoAnswer(text, isCorrect, onEnd) {
+    if (!GD_SPEECH_SYNTH_SUPPORTED) { if (onEnd) onEnd(); return; }
     try {
         window.speechSynthesis.cancel(); // 이전에 읽던 말이 남아있으면 정리하고 새로 읽는다.
-        var utter = new SpeechSynthesisUtterance(text);
+        var style = gdGetAnswerStyle();
+        var spoken = (isCorrect && style === 'correctPrefix') ? ('정답! ' + text) : text;
+        var utter = new SpeechSynthesisUtterance(spoken);
         var voice = getGogodinoSelectedVoice();
-        utter.lang = voice ? voice.lang : 'ko-KR';
-        if (voice) { utter.voice = voice; }
+        if (voice) {
+            // 사용자가 직접 고른 목소리가 있을 때만 voice/lang을 지정한다.
+            utter.voice = voice;
+            utter.lang = voice.lang;
+        }
+        // voice가 없으면(기본값) lang도 지정하지 않는다 — 'ko-KR'을 강제하면 한국어 음성이
+        // 없는 기기(일부 안드로이드 등)에서는 아예 아무 소리도 안 나기 때문에, 그냥 기기의
+        // 시스템 기본 설정 그대로 읽게 둔다.
+        if (onEnd) { utter.onend = onEnd; utter.onerror = onEnd; }
         window.speechSynthesis.speak(utter);
-    } catch (e) { }
+    } catch (e) { if (onEnd) onEnd(); }
+}
+// ===== 설정 팝업 (목소리 / 정답 방식, 메인 설정 화면과 별도의 모달) =====
+var gogodinoUiState = { settingsTab: 'voice' };
+function openGogodinoSettings() {
+    gogodinoUiState.settingsTab = 'voice';
+    renderGogodinoSettingsModal();
+}
+function closeGogodinoSettings() {
+    var el = document.getElementById('gdSettingsOverlay');
+    if (el) el.parentNode.removeChild(el);
+}
+function setGogodinoSettingsTab(tab) {
+    gogodinoUiState.settingsTab = tab;
+    renderGogodinoSettingsModal();
+}
+function gdVoiceSetupBtnHtml(voice, label, savedUri) {
+    var active = savedUri === voice.voiceURI;
+    var safeUri = voice.voiceURI.replace(/'/g, "\\'");
+    return '<button class="setup-btn' + (active ? ' active' : '') + '" onclick="setGogodinoVoice(\'' + safeUri + '\')">' + label + '</button>';
+}
+function buildGogodinoVoiceTabHtml() {
+    if (!GD_SPEECH_SYNTH_SUPPORTED) {
+        return '<div class="gogodino-voice-status">이 기기/브라우저는 음성 읽어주기를 지원하지 않아요.</div>';
+    }
+    var savedUri = gdGetSavedVoiceURI();
+    var koreanVoices = getGogodinoKoreanVoices();
+    var otherVoices = gdVoicesList.filter(function (v) { return koreanVoices.indexOf(v) === -1; });
+
+    var html = '<div class="setup-section-label">정답을 읽어주는 목소리</div>';
+    html += '<div class="gogodino-voice-status">기본값은 기기의 시스템 설정(기본 언어·목소리)을 그대로 따라요.</div>';
+    html += '<div class="gogodino-option-grid">';
+    html += '<button class="setup-btn' + (savedUri === '' ? ' active' : '') + '" onclick="setGogodinoVoice(\'\')">⚙️ 기본값 (시스템 설정)</button>';
+
+    if (koreanVoices.length) {
+        var groups = gdBuildVoiceGenderGroups(koreanVoices);
+        if (groups.female) { html += gdVoiceSetupBtnHtml(groups.female, '👩 여자 목소리', savedUri); }
+        if (groups.male) { html += gdVoiceSetupBtnHtml(groups.male, '👨 남자 목소리', savedUri); }
+        groups.other.forEach(function (v) { html += gdVoiceSetupBtnHtml(v, v.name, savedUri); });
+    }
+    // 한국어 음성이 없는 기기(특히 일부 안드로이드)에서도 설치된 다른 목소리 중에서 고를 수 있게 한다.
+    otherVoices.forEach(function (v) { html += gdVoiceSetupBtnHtml(v, v.name + ' (' + v.lang + ')', savedUri); });
+    html += '</div>';
+
+    if (koreanVoices.length === 0) {
+        html += '<div class="gogodino-voice-status">이 기기에는 한국어 음성이 따로 설치돼 있지 않아요. "기본값"을 쓰면 기기의 시스템 설정대로 읽어주고, 위 목록에서 설치된 다른 목소리를 선택할 수도 있어요.</div>';
+    }
+    html += '<button class="action-btn secondary" style="font-size:0.85rem; padding:0.5rem 0.8rem;" onclick="speakGogodinoAnswer(\'안녕하세요\', false)">🔊 미리 듣기</button>';
+    return html;
+}
+function buildGogodinoAnswerStyleTabHtml() {
+    var style = gdGetAnswerStyle();
+    var html = '<div class="setup-section-label">정답을 맞췄을 때 읽어주는 방식</div><div class="gogodino-option-grid">';
+    html += '<button class="setup-btn' + (style === 'nameOnly' ? ' active' : '') + '" onclick="setGogodinoAnswerStyle(\'nameOnly\')">이름만 (예: "맥스")</button>';
+    html += '<button class="setup-btn' + (style === 'correctPrefix' ? ' active' : '') + '" onclick="setGogodinoAnswerStyle(\'correctPrefix\')">정답! + 이름 (예: "정답! 맥스")</button>';
+    html += '</div><div class="gogodino-voice-status">오답이거나 시간이 끝났을 땐 항상 이름만 말해줘요.</div>';
+    return html;
+}
+function renderGogodinoSettingsModal() {
+    var tab = gogodinoUiState.settingsTab;
+    var html = '<div class="gd-modal-overlay" id="gdSettingsOverlay" onclick="if(event.target===this){closeGogodinoSettings();}">';
+    html += '<div class="gd-modal-box">';
+    html += '<div class="gd-modal-header"><div class="gd-modal-title">⚙️ 설정</div><button class="gd-modal-close" onclick="closeGogodinoSettings()">✕</button></div>';
+    html += '<div class="gd-modal-tabs">';
+    html += '<button class="gd-modal-tab' + (tab === 'voice' ? ' active' : '') + '" onclick="setGogodinoSettingsTab(\'voice\')">🔊 목소리</button>';
+    html += '<button class="gd-modal-tab' + (tab === 'style' ? ' active' : '') + '" onclick="setGogodinoSettingsTab(\'style\')">🗣️ 정답 방식</button>';
+    html += '</div>';
+    html += '<div class="gd-modal-body">' + (tab === 'voice' ? buildGogodinoVoiceTabHtml() : buildGogodinoAnswerStyleTabHtml()) + '</div>';
+    html += '</div></div>';
+
+    var existing = document.getElementById('gdSettingsOverlay');
+    if (existing) { existing.outerHTML = html; } else { document.body.insertAdjacentHTML('beforeend', html); }
 }
 
 function initGogodinoQuiz() {
@@ -146,26 +260,7 @@ function renderGogodinoSetup() {
     });
     html += '</div>';
 
-    if (GD_SPEECH_SYNTH_SUPPORTED) {
-        var savedVoiceURI = gdGetSavedVoiceURI();
-        var koreanVoices = gdVoicesList.filter(function (v) { return v.lang && v.lang.toLowerCase().indexOf('ko') === 0; });
-        var voiceChoices = koreanVoices.length ? koreanVoices : gdVoicesList;
-        html += '<div class="setup-section-label" id="gogodinoVoiceSection">정답을 읽어주는 목소리 🔊</div><div class="gogodino-option-grid">';
-        html += '<button class="setup-btn' + (savedVoiceURI === '' ? ' active' : '') + '" onclick="setGogodinoVoice(\'\')">기본 목소리</button>';
-        voiceChoices.forEach(function (v) {
-            var active = savedVoiceURI === v.voiceURI;
-            var gender = gdGuessVoiceGender(v.name);
-            var label = (gender ? gender + ' · ' : '') + v.name;
-            var safeUri = v.voiceURI.replace(/'/g, "\\'");
-            html += '<button class="setup-btn' + (active ? ' active' : '') + '" onclick="setGogodinoVoice(\'' + safeUri + '\')">' + label + '</button>';
-        });
-        html += '</div>';
-        if (voiceChoices.length === 0) {
-            html += '<div class="gogodino-voice-status">이 기기에 설치된 목소리를 아직 찾지 못했어요. 잠시 후 다시 열어보면 나타나요.</div>';
-        } else {
-            html += '<button class="action-btn secondary" style="font-size:0.85rem; padding:0.5rem 0.8rem; margin-bottom:1rem;" onclick="speakGogodinoAnswer(\'안녕하세요\')">🔊 목소리 미리 듣기</button>';
-        }
-    }
+    html += '<button class="action-btn secondary" style="margin-bottom:1.2rem;" onclick="openGogodinoSettings()">⚙️ 목소리 · 정답 방식 설정</button>';
 
     html += '<button class="action-btn" ' + (pool.length === 0 ? 'disabled' : '') + ' onclick="startGogodinoSession()">시작하기 🚀 (' + pool.length + '개 중에서)</button>';
     document.getElementById('mainArea').innerHTML = html;
@@ -224,8 +319,7 @@ function resetGogodinoRoundState() {
     gogodinoState.timedOut = false;
     gogodinoState.showSuccess = false;
     gogodinoState.answerSpoken = false;
-    gogodinoState.wrongVoiceAttempts = 0;
-    gogodinoState.voiceExhausted = false;
+    gogodinoState.wrongAttempts = 0;
     gogodinoState.timeLeft = gogodinoSettings.timeLimit;
     gogodinoState.timerId = null;
 }
@@ -276,7 +370,7 @@ function renderGogodino() {
 
     if (!gogodinoState.revealed) {
         if (GD_SPEECH_SUPPORTED) {
-            html += '<button class="action-btn" style="background:#8b5cf6;" onclick="startVoiceAnswer()">🎤 음성으로 답하기</button>';
+            html += '<button class="action-btn" style="background:#3f7d51;" onclick="startVoiceAnswer()">🎤 음성으로 답하기</button>';
             html += '<div id="gdVoiceStatus" class="gogodino-voice-status"></div>';
             html += '<button class="action-btn secondary" onclick="revealGogodino(true)">그냥 정답 보기 👀</button>';
         } else {
@@ -291,10 +385,7 @@ function renderGogodino() {
                 html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
             }
             html += '<div class="msg-box good" style="display:block;">🎉 ' + (gogodinoState.voiceSaid !== undefined ? '정답을 정확히 말했어요!' : '정답이에요!') + '</div>';
-            html += buildStandardResultButtons('nextGogodinoQuestion()', 'retryGogodinoQuestion()', 'initGogodinoQuiz()');
-        } else if (gogodinoState.voiceExhausted) {
-            html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
-            html += '<div class="msg-box bad" style="display:block;">음... 두 번 다 다르게 들렸어요. 정답을 확인해보세요!</div>';
+            if (GD_SPEECH_SUPPORTED) { html += '<div class="gogodino-voice-status">🎤 "다음" 또는 "다음 문제"라고 말해도 넘어가요</div>'; }
             html += buildStandardResultButtons('nextGogodinoQuestion()', 'retryGogodinoQuestion()', 'initGogodinoQuiz()');
         } else if (gogodinoState.voiceSaid !== undefined) {
             html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
@@ -314,9 +405,13 @@ function renderGogodino() {
     document.getElementById('mainArea').innerHTML = html;
 
     // 정답이 화면에 뜨는 순간, 이번 라운드에서 딱 한 번만 음성으로 읽어준다.
+    // 정답을 맞춘 경우엔 TTS가 끝난 뒤에 "다음" 음성 명령을 듣기 시작한다 (말하는 도중 마이크가
+    // 같이 켜져 있으면 TTS 소리를 마이크가 주워듣고 오작동할 수 있어서).
     if (gogodinoState.revealed && !gogodinoState.answerSpoken) {
         gogodinoState.answerSpoken = true;
-        speakGogodinoAnswer(c.name);
+        speakGogodinoAnswer(c.name, gogodinoState.showSuccess, function () {
+            if (gogodinoState.showSuccess && GD_SPEECH_SUPPORTED) { startGogodinoNextVoiceListener(); }
+        });
     }
 }
 
@@ -348,6 +443,8 @@ function overrideGogodinoCorrect() {
     gogodinoState.correctCount++;
     gogodinoState.showSuccess = true;
     renderGogodino();
+    // 이 경로는 이미 한 번 이름을 읽어준 뒤라 다시 TTS를 틀지 않으므로, 여기서 바로 "다음" 듣기를 시작한다.
+    if (GD_SPEECH_SUPPORTED) { startGogodinoNextVoiceListener(); }
 }
 
 function stopVoiceRecognition() {
@@ -372,9 +469,12 @@ function startVoiceAnswer() {
     recognition.continuous = true; // 중간에 끊기고 다시 시작하는 횟수를 줄여서 마이크 시작음이 덜 울리게 한다.
 
     recognition.onresult = function (event) {
+        // continuous 모드에서는 event.results에 이전 발화까지 계속 쌓이므로,
+        // 항상 가장 마지막(이번에 새로 들어온) 결과만 읽어야 한다.
+        var last = event.results[event.results.length - 1];
         var transcripts = [];
-        for (var i = 0; i < event.results[0].length; i++) {
-            transcripts.push(event.results[0][i].transcript);
+        for (var i = 0; i < last.length; i++) {
+            transcripts.push(last[i].transcript);
         }
         handleGogodinoVoiceResult(transcripts);
     };
@@ -444,6 +544,43 @@ function gdSpeechSimilarity(a, b) {
 }
 var GD_VOICE_MATCH_THRESHOLD = 0.5; // 정확도 50% 이상이면 정답으로 인정
 
+// 정답 화면에서 "다음" 또는 "다음 문제"라고 말하면 다음 문제로 넘어간다 (정답을 맞춘 뒤에만 켜짐).
+// 알아듣지 못하거나 다른 말이면 onend에서 이 인스턴스가 여전히 유효한지(아직 정답 화면인지)
+// 확인한 뒤 다시 듣기를 반복한다.
+function startGogodinoNextVoiceListener() {
+    var SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+    stopVoiceRecognition();
+
+    var recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+    recognition.continuous = true;
+
+    recognition.onresult = function (event) {
+        var last = event.results[event.results.length - 1];
+        var isNext = false;
+        for (var i = 0; i < last.length; i++) {
+            if (gdNormalizeSpeechText(last[i].transcript).indexOf('다음') > -1) { isNext = true; }
+        }
+        if (isNext) { nextGogodinoQuestion(); }
+    };
+    recognition.onerror = function () { };
+    recognition.onend = function () {
+        if (gdVoiceRecognition === recognition && gogodinoState.showSuccess) {
+            setTimeout(function () {
+                if (gdVoiceRecognition === recognition && gogodinoState.showSuccess) {
+                    try { recognition.start(); } catch (e) { }
+                }
+            }, 300);
+        }
+    };
+
+    gdVoiceRecognition = recognition;
+    try { recognition.start(); } catch (e) { }
+}
+
 function handleGogodinoVoiceResult(transcripts) {
     var target = gdNormalizeSpeechText(gogodinoState.current.name);
     var matched = transcripts.some(function (t) {
@@ -455,20 +592,16 @@ function handleGogodinoVoiceResult(transcripts) {
     gogodinoState.voiceMatched = matched;
 
     if (!matched) {
-        gogodinoState.wrongVoiceAttempts = (gogodinoState.wrongVoiceAttempts || 0) + 1;
-        // 한 번 더 들어볼 기회를 준다. 두 번째도 틀리면 더 기다리지 않고 바로 정답 화면으로 넘어간다.
-        if (gogodinoState.wrongVoiceAttempts >= 2) {
-            stopVoiceRecognition();
-            if (gogodinoState.timerId) { clearInterval(gogodinoState.timerId); gogodinoState.timerId = null; }
-            gogodinoState.revealed = true;
-            gogodinoState.voiceExhausted = true;
-            gogodinoState.totalCount++;
-            renderGogodino();
+        gogodinoState.wrongAttempts++;
+        if (gogodinoState.wrongAttempts >= 2) {
+            // 한 번 더 기회를 줬는데도 또 틀리면, 더 듣지 않고 바로 정답을 보여준다.
+            revealGogodino(true);
             return;
         }
-        // 라운드를 끝내지 않는다. 마이크는 onend에서 자동으로 다시 듣기 시작한다.
+        // 처음 틀렸을 때는 라운드를 끝내지 않고 한 번 더 들어본다.
+        // 마이크는 onend에서 자동으로 다시 듣기 시작한다.
         var st = document.getElementById('gdVoiceStatus');
-        if (st) st.innerText = '🎙️ "' + gogodinoState.voiceSaid + '"라고 들었어요. 한 번만 더 말해볼까요?';
+        if (st) st.innerText = '🎙️ "' + gogodinoState.voiceSaid + '"라고 들었어요. 다시 말해볼까요?';
         return;
     }
 

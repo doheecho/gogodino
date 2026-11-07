@@ -178,9 +178,9 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; color: var(--accent); lette
     transition: width 0.1s linear;
 }
 
-/* ===== 고고다이노 캐릭터 이미지 ===== */
+/* ===== 고고다이노 캐릭터 이미지 (정답창과 같은 가로너비로 문제가 나올 때부터 쭉 크게 보여준다) ===== */
 .gogodino-image-box {
-    width: 75%;
+    width: 100%;
     aspect-ratio: 1 / 1;
     margin: 0 auto 1rem auto;
     background: #f2faff;
@@ -220,4 +220,68 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; color: var(--accent); lette
     color: #5b7694;
     min-height: 1.2rem;
     margin: 0.4rem 0 0.2rem 0;
+}
+
+/* ===== 설정 팝업 (목소리 / 정답 방식) ===== */
+.gd-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 20, 40, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+.gd-modal-box {
+    background: #fff;
+    width: 100%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 1.1rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    padding: 1.1rem 1.2rem 1.4rem 1.2rem;
+    text-align: center;
+}
+.gd-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+}
+.gd-modal-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--primary);
+}
+.gd-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: #5b7694;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+}
+.gd-modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+.gd-modal-tab {
+    flex: 1;
+    padding: 0.6rem 0.4rem;
+    border-radius: 0.6rem;
+    border: 2px solid #cfe6f7;
+    background: #f2faff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #2c4566;
+    cursor: pointer;
+}
+.gd-modal-tab.active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
