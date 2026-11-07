@@ -224,6 +224,8 @@ function resetGogodinoRoundState() {
     gogodinoState.timedOut = false;
     gogodinoState.showSuccess = false;
     gogodinoState.answerSpoken = false;
+    gogodinoState.wrongVoiceAttempts = 0;
+    gogodinoState.voiceExhausted = false;
     gogodinoState.timeLeft = gogodinoSettings.timeLimit;
     gogodinoState.timerId = null;
 }
@@ -289,6 +291,10 @@ function renderGogodino() {
                 html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
             }
             html += '<div class="msg-box good" style="display:block;">🎉 ' + (gogodinoState.voiceSaid !== undefined ? '정답을 정확히 말했어요!' : '정답이에요!') + '</div>';
+            html += buildStandardResultButtons('nextGogodinoQuestion()', 'retryGogodinoQuestion()', 'initGogodinoQuiz()');
+        } else if (gogodinoState.voiceExhausted) {
+            html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
+            html += '<div class="msg-box bad" style="display:block;">음... 두 번 다 다르게 들렸어요. 정답을 확인해보세요!</div>';
             html += buildStandardResultButtons('nextGogodinoQuestion()', 'retryGogodinoQuestion()', 'initGogodinoQuiz()');
         } else if (gogodinoState.voiceSaid !== undefined) {
             html += '<div class="game-sub-desc">내가 말한 것: "' + gogodinoState.voiceSaid + '"</div>';
@@ -449,9 +455,20 @@ function handleGogodinoVoiceResult(transcripts) {
     gogodinoState.voiceMatched = matched;
 
     if (!matched) {
-        // 정답이 아니면 라운드를 끝내지 않는다. 마이크는 onend에서 자동으로 다시 듣기 시작한다.
+        gogodinoState.wrongVoiceAttempts = (gogodinoState.wrongVoiceAttempts || 0) + 1;
+        // 한 번 더 들어볼 기회를 준다. 두 번째도 틀리면 더 기다리지 않고 바로 정답 화면으로 넘어간다.
+        if (gogodinoState.wrongVoiceAttempts >= 2) {
+            stopVoiceRecognition();
+            if (gogodinoState.timerId) { clearInterval(gogodinoState.timerId); gogodinoState.timerId = null; }
+            gogodinoState.revealed = true;
+            gogodinoState.voiceExhausted = true;
+            gogodinoState.totalCount++;
+            renderGogodino();
+            return;
+        }
+        // 라운드를 끝내지 않는다. 마이크는 onend에서 자동으로 다시 듣기 시작한다.
         var st = document.getElementById('gdVoiceStatus');
-        if (st) st.innerText = '🎙️ "' + gogodinoState.voiceSaid + '"라고 들었어요. 다시 말해볼까요?';
+        if (st) st.innerText = '🎙️ "' + gogodinoState.voiceSaid + '"라고 들었어요. 한 번만 더 말해볼까요?';
         return;
     }
 
