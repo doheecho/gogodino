@@ -1,9 +1,11 @@
 :root {
-    --primary: #2e8b57;
-    --primary-hover: #236b43;
-    --bg-color: #eafbf0;
+    --primary: #1298d4;
+    --primary-hover: #0d7bb0;
+    --navy: #152a4e;
+    --accent: #ffcc02;
+    --bg-color: #eaf6ff;
     --card-bg: #ffffff;
-    --text-main: #234030;
+    --text-main: #152a4e;
     --good: #10b981;
     --bad: #ef4444;
 }
@@ -28,7 +30,7 @@ body {
     overflow: hidden;
 }
 .header-banner {
-    background-color: var(--primary);
+    background-color: var(--navy);
     color: white;
     height: 4.5rem;
     padding: 0.4rem 1.25rem;
@@ -36,11 +38,11 @@ body {
     justify-content: space-between;
     align-items: center;
 }
-h1 { font-size: 1.1rem; margin: 0; text-align: left; }
+h1 { font-size: 1.1rem; margin: 0; text-align: left; color: var(--accent); letter-spacing: 0.02rem; }
 .header-title { display: flex; align-items: center; gap: 0.55rem; }
 .header-icon { height: 3.6rem; width: auto; border-radius: 0.4rem; display: block; flex-shrink: 0; object-fit: cover; }
 .home-btn {
-    background: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.18);
     border: none;
     color: white;
     padding: 0.4rem 0.8rem;
@@ -50,7 +52,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     font-weight: bold;
     display: none;
 }
-.home-btn:hover { background: rgba(255,255,255,0.35); }
+.home-btn:hover { background: rgba(255,255,255,0.3); }
 .content-padding { padding: 1.3rem 1.4rem 1.6rem 1.4rem; text-align: center; }
 
 .game-title-box {
@@ -61,7 +63,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
 }
 .game-sub-desc {
     font-size: 0.88rem;
-    color: #5f8a71;
+    color: #5b7694;
     margin-bottom: 1rem;
 }
 .status-row {
@@ -72,7 +74,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     gap: 0.4rem;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #3f6b50;
+    color: #2c4566;
     margin-bottom: 0.8rem;
 }
 .gogodino-badge-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
@@ -83,14 +85,14 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     padding: 0.28rem 0.7rem;
     font-size: 0.82rem;
     font-weight: 800;
-    background: #eafbf0;
-    border-color: var(--primary);
-    color: #1f5f3a;
+    background: #fff8de;
+    border-color: var(--accent);
+    color: #8a6d00;
 }
 .msg-box {
-    background: #eafbf0;
-    border: 1px solid #bfe8cc;
-    color: #1f5f3a;
+    background: #eaf6ff;
+    border: 1px solid #bfe3fb;
+    color: #0d5a86;
     padding: 0.7rem;
     border-radius: 0.5rem;
     font-size: 0.92rem;
@@ -113,19 +115,19 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     width: 100%;
 }
 .action-btn:hover { background-color: var(--primary-hover); }
-.action-btn.secondary { background-color: #8b9a8f; }
-.action-btn:disabled { background-color: #c9d1cb; cursor: not-allowed; }
+.action-btn.secondary { background-color: #7b8ba3; }
+.action-btn:disabled { background-color: #c7d3e0; cursor: not-allowed; }
 
 .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
 
-.setup-section-label { font-weight: 800; font-size: 0.92rem; margin-bottom: 0.5rem; color: #3f6b50; text-align: left; }
+.setup-section-label { font-weight: 800; font-size: 0.92rem; margin-bottom: 0.5rem; color: #2c4566; text-align: left; }
 .setup-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
 .setup-btn {
     flex: 1;
     min-width: 92px;
     background-color: #ffffff;
-    border: 2px solid #cdebd8;
-    color: #3f6b50;
+    border: 2px solid #cfe6f7;
+    color: #2c4566;
     padding: 0.6rem 0.5rem;
     font-size: 0.86rem;
     font-weight: 700;
@@ -164,7 +166,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
 .timer-container {
     width: 100%;
     height: 10px;
-    background-color: #cdebd8;
+    background-color: #cfe6f7;
     border-radius: 5px;
     margin-bottom: 1rem;
     overflow: hidden;
@@ -181,14 +183,14 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     width: 75%;
     aspect-ratio: 1 / 1;
     margin: 0 auto 1rem auto;
-    background: #f3fbf6;
-    border: 3px solid #bfe8cc;
+    background: #f2faff;
+    border: 3px solid #bfe3fb;
     border-radius: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 6px 14px rgba(46, 139, 87, 0.18);
+    box-shadow: 0 6px 14px rgba(18, 152, 212, 0.2);
 }
 .gogodino-image-box img {
     max-width: 92%;
@@ -199,7 +201,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
     font-size: 1.8rem;
     font-weight: 800;
     letter-spacing: 0.35rem;
-    background: #f3fbf6;
+    background: #f2faff;
     border: 2px dashed var(--primary);
     border-radius: 0.6rem;
     padding: 0.8rem;
@@ -215,7 +217,7 @@ h1 { font-size: 1.1rem; margin: 0; text-align: left; }
 }
 .gogodino-voice-status {
     font-size: 0.85rem;
-    color: #5f8a71;
+    color: #5b7694;
     min-height: 1.2rem;
     margin: 0.4rem 0 0.2rem 0;
 }
