@@ -1,0 +1,221 @@
+:root {
+    --primary: #2e8b57;
+    --primary-hover: #236b43;
+    --bg-color: #eafbf0;
+    --card-bg: #ffffff;
+    --text-main: #234030;
+    --good: #10b981;
+    --bad: #ef4444;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+.app-container {
+    background-color: var(--card-bg);
+    width: 100%;
+    max-width: 620px;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+.header-banner {
+    background-color: var(--primary);
+    color: white;
+    height: 4.5rem;
+    padding: 0.4rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+h1 { font-size: 1.1rem; margin: 0; text-align: left; }
+.header-title { display: flex; align-items: center; gap: 0.55rem; }
+.header-icon { height: 3.6rem; width: auto; border-radius: 0.4rem; display: block; flex-shrink: 0; object-fit: cover; }
+.home-btn {
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    display: none;
+}
+.home-btn:hover { background: rgba(255,255,255,0.35); }
+.content-padding { padding: 1.3rem 1.4rem 1.6rem 1.4rem; text-align: center; }
+
+.game-title-box {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 0.4rem;
+}
+.game-sub-desc {
+    font-size: 0.88rem;
+    color: #5f8a71;
+    margin-bottom: 1rem;
+}
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #3f6b50;
+    margin-bottom: 0.8rem;
+}
+.gogodino-badge-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.gogodino-badge {
+    display: inline-block;
+    border-radius: 0.5rem;
+    border: 2px solid;
+    padding: 0.28rem 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 800;
+    background: #eafbf0;
+    border-color: var(--primary);
+    color: #1f5f3a;
+}
+.msg-box {
+    background: #eafbf0;
+    border: 1px solid #bfe8cc;
+    color: #1f5f3a;
+    padding: 0.7rem;
+    border-radius: 0.5rem;
+    font-size: 0.92rem;
+    margin: 0.8rem 0;
+    font-weight: 700;
+    display: none;
+}
+.msg-box.good { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.msg-box.bad { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.action-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    margin-top: 0.6rem;
+    width: 100%;
+}
+.action-btn:hover { background-color: var(--primary-hover); }
+.action-btn.secondary { background-color: #8b9a8f; }
+.action-btn:disabled { background-color: #c9d1cb; cursor: not-allowed; }
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+
+.setup-section-label { font-weight: 800; font-size: 0.92rem; margin-bottom: 0.5rem; color: #3f6b50; text-align: left; }
+.setup-btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+.setup-btn {
+    flex: 1;
+    min-width: 92px;
+    background-color: #ffffff;
+    border: 2px solid #cdebd8;
+    color: #3f6b50;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+.setup-btn.active { background-color: var(--primary); border-color: var(--primary); color: white; }
+.setup-btn.all-btn { min-width: 60px; flex: 0 0 auto; }
+
+/* 시리즈: 전체(2열 병합) + 7개 시리즈 2열 그리드 (이름이 길어서 2열로 넉넉하게) */
+.gogodino-gen-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+.gogodino-gen-grid .setup-btn {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.25;
+}
+.gogodino-gen-grid .gogodino-gen-all { grid-column: span 2; }
+
+/* 제한 시간 / 목소리 선택: 4열 균등 그리드 */
+.gogodino-option-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+.gogodino-option-grid .setup-btn { min-width: 0; }
+
+.timer-container {
+    width: 100%;
+    height: 10px;
+    background-color: #cdebd8;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+.timer-bar {
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary);
+    transition: width 0.1s linear;
+}
+
+/* ===== 고고다이노 캐릭터 이미지 ===== */
+.gogodino-image-box {
+    width: 75%;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 1rem auto;
+    background: #f3fbf6;
+    border: 3px solid #bfe8cc;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 6px 14px rgba(46, 139, 87, 0.18);
+}
+.gogodino-image-box img {
+    max-width: 92%;
+    max-height: 92%;
+    object-fit: contain;
+}
+.gogodino-hint-box {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 0.35rem;
+    background: #f3fbf6;
+    border: 2px dashed var(--primary);
+    border-radius: 0.6rem;
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+    min-height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gogodino-hint-box.gogodino-hint-answer {
+    color: var(--primary);
+    letter-spacing: 0.1rem;
+}
+.gogodino-voice-status {
+    font-size: 0.85rem;
+    color: #5f8a71;
+    min-height: 1.2rem;
+    margin: 0.4rem 0 0.2rem 0;
+}

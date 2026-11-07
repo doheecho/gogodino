@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "고고다이노 맞히기!",
+  "short_name": "고고다이노맞히기",
+  "description": "고고다이노 캐릭터 사진을 보고 이름을 맞히는 음성인식 퀴즈 게임",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "ko",
+  "background_color": "#eafbf0",
+  "theme_color": "#2e8b57",
+  "icons": [
+    { "src": "icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

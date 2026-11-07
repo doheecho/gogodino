@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고고다이노 맞히기!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e8b57">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="icon-192x192.png" sizes="192x192" type="image/png">
+    <link rel="icon" href="icon-512x512.png" sizes="512x512" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header-banner">
+            <div class="header-title">
+                <img src="icon-512x512.png" alt="고고다이노" class="header-icon">
+                <h1>고고다이노 맞히기!</h1>
+            </div>
+            <button class="home-btn" id="homeBtn" onclick="goHome()">설정으로</button>
+        </div>
+        <div class="content-padding" id="mainArea"></div>
+    </div>
+
+    <!-- 로딩 순서: main.js(공용 유틸) → 게임 스크립트 -->
+    <script src="js/main.js"></script>
+    <script src="js/games/gogodino.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('sw.js').catch(function (err) {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

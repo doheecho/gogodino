@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "PLACEHOLDER.replace.with.your.apk.package_name.twa",
+        "sha256_cert_fingerprints": ["PLACEHOLDER:REPLACE:WITH:YOUR:APK:SIGNING:CERT:SHA256:FINGERPRINT"]
+      }
+    }]
