@@ -178,8 +178,9 @@ function buildGogodinoVoiceTabHtml() {
         return '<div class="gogodino-voice-status">이 기기/브라우저는 음성 읽어주기를 지원하지 않아요.</div>';
     }
     var savedUri = gdGetSavedVoiceURI();
+    // 선택창에는 "기본값"과 한국어 음성만 보여준다 — 다른 언어 목소리(힌디어 등)가
+    // 섞여 들어가는 걸 막기 위해 한국어가 아닌 목소리는 아예 목록에 넣지 않는다.
     var koreanVoices = getGogodinoKoreanVoices();
-    var otherVoices = gdVoicesList.filter(function (v) { return koreanVoices.indexOf(v) === -1; });
 
     var html = '<div class="setup-section-label">정답을 읽어주는 목소리</div>';
     html += '<div class="gogodino-voice-status">기본값은 기기의 시스템 설정(기본 언어·목소리)을 그대로 따라요.</div>';
@@ -192,12 +193,10 @@ function buildGogodinoVoiceTabHtml() {
         if (groups.male) { html += gdVoiceSetupBtnHtml(groups.male, '👨 남자 목소리', savedUri); }
         groups.other.forEach(function (v) { html += gdVoiceSetupBtnHtml(v, v.name, savedUri); });
     }
-    // 한국어 음성이 없는 기기(특히 일부 안드로이드)에서도 설치된 다른 목소리 중에서 고를 수 있게 한다.
-    otherVoices.forEach(function (v) { html += gdVoiceSetupBtnHtml(v, v.name + ' (' + v.lang + ')', savedUri); });
     html += '</div>';
 
     if (koreanVoices.length === 0) {
-        html += '<div class="gogodino-voice-status">이 기기에는 한국어 음성이 따로 설치돼 있지 않아요. "기본값"을 쓰면 기기의 시스템 설정대로 읽어주고, 위 목록에서 설치된 다른 목소리를 선택할 수도 있어요.</div>';
+        html += '<div class="gogodino-voice-status">이 기기에는 한국어 음성이 따로 설치돼 있지 않아요. "기본값"을 쓰면 기기의 시스템 설정대로 읽어줘요.</div>';
     }
     html += '<button class="action-btn secondary" style="font-size:0.85rem; padding:0.5rem 0.8rem;" onclick="speakGogodinoAnswer(\'안녕하세요\', false)">🔊 미리 듣기</button>';
     return html;
